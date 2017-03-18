@@ -409,6 +409,7 @@ var EUSignCPTest = NewClass({
 
             return true;
         },
+
         removeStoredPrivateKey: function () {
             utils.RemoveSessionStorageItem(
                 euSignTest.PrivateKeyNameSessionStorageName);
@@ -423,6 +424,7 @@ var EUSignCPTest = NewClass({
 
             euSignTest.removeCAServer();
         },
+
 //-----------------------------------------------------------------------------
         selectPrivateKeyFile: function (event) {
             var enable = (event.target.files.length == 1);
@@ -824,6 +826,7 @@ var EUSignCPTest = NewClass({
                 try {
                     var info = "";
                     if (isInternalSign) {
+                        // XXX  Verifying internal data
                         info = euSign.VerifyDataInternal(signedData);
                     } else {
                         if (isSignHash) {
@@ -852,6 +855,7 @@ var EUSignCPTest = NewClass({
                         }
 
                         if (isInternalSign) {
+                            // XXX: here extract data from info
                             var signData = euSign.ArrayToString(info.GetData());
                             var currData = prepareObject(local_data.obj);
                             if (document.getElementById('cbTestError').checked) // для демострации неверной подписи
@@ -1866,6 +1870,7 @@ function setStatus(message) {
 
 function setKeyStatus(message, type) {
     document.getElementById('ChoosePKFileText').innerHTML = message;
+    console.log("KEY-STATUS:", message, type);
     switch (type) {
         case 'error' :
             document.getElementById('keyStatusPanel').className = 'panel panel-danger';
