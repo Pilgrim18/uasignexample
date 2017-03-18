@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token">
+    <title>sign</title>
+    <link rel="stylesheet" href="./public/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./public/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="./public/css/font-awesome.min.css">
+    <link rel="stylesheet" href="./public/css/mprogress.min.css">
+    <link rel="stylesheet" href="./public/css/jsondiffpatch_html.css">
+    <link rel="stylesheet" href="./public/css/main.css">
+</head>
+<body>
+    <script src="./public/js/lib/jquery.min.js"></script>
+    <script src="./public/js/lib/bootstrap.min.js"></script>
+    <script src="./public/js/lib/mprogress.min.js"></script>
+    <script src="./public/js/lib/jsondiffpatch.min.js"></script>
+    <script src="./public/js/lib/jsondiffpatch-formatters.min.js"></script>
+    <script src="./public/js/main.js"></script>
+    <div class="container">
+        <h1>Накладення електронно цифрового підпису</h1>
+        <p>Адреса документу: <a href="/Data/documents/invoice.txt">/Data/documents/invoice.txt</a></p>
+<!--         <p>Адреса документу: <a href="https://lb.api-sandbox.openprocurement.org/api/0.11/tenders/d747a479adcb47a5853bd185c90b0f90?opt_pretty=1">https://lb.api-sandbox.openprocurement.org/api/0.11/tenders/d747a479adcb47a5853bd185c90b0f90?opt_pretty=1</a></p>
+ -->        <!-- work with IIT javascript-->
+        <div id="infoPanel" class="panel panel-default">
+            <div class="panel-heading">Накладення підпису<span id="status"></span></div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-sm-2">
+                        <p>Оберіть ЦСК:</p>
+                    </div>
+                    <div class="col-sm-10">
+                        <select id="CAsServersSelect"></select>
+                    </div>
+                </div>
+                <div id="keyStatusPanel" class="panel panel-info">
+                    <div class="panel-heading"><span id="ChoosePKFileText"></span></div>
+                    <div class="panel-body">
+                        <div id="PKCertsSelectZone" hidden="" class="row">
+                            <div class="col-sm-2">
+                                <p>Особисті сертифікати:</p>
+                            </div>
+                            <div class="col-sm-2"></div>
+                            <div class="col-sm-1">
+                                <button id="ChoosePKCertsButton" onclick="document.getElementById('ChoosePKCertsInput').click();" class="btn btn-default">Обрати</button>
+                                <input type="file" multiple="" id="ChoosePKCertsInput" style="visibility: hidden">
+                            </div>
+                            <div class="col-sm-7">
+                                <output id="SelectedPKCertsList"></output>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <p>Особистий ключ:</p>
+                            </div>
+                            <div class="col-sm-2">
+                                <input readonly="readonly" id="PKeyFileName" onclick="document.getElementById('PKeyFileInput').click();" style="width: 180px;" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-sm-8">
+                                <button id="PKeySelectFileButton" onclick="document.getElementById('PKeyFileInput').click();" class="btn btn-default">Обрати</button>
+                                <input type="file" id="PKeyFileInput" style="visibility: hidden">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <p>Пароль захисту ключа:</p>
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="password" id="PKeyPassword" style="width: 180px;" class="form-control form-control-sm" autocomplete="off">
+                            </div>
+                            <div class="col-sm-6">
+                                <button id="PKeyReadButton" onclick="euSignTest.readPrivateKeyButtonClick()" class="btn btn-default">Зчитати</button>
+                            </div>
+                            <div class="col-sm-2">
+                                <button id="SignDataButton" onclick="euSignTest.signData()" disabled="" class="btn btn-info pull-right">Підписати</button>
+                            </div>
+                        </div>
+                        <div id="certInfo" style="display: none" class="alert alert-info"></div>
+                        <div class="alert alert-primary">
+                            <textarea rows="7" id="signInfo" style="width: 100%"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">Перевірка підпису</div>
+                    <div class="panel-body">
+                        <div class="alert alert-danger" style="display: none" id="verificationError">Підпис невірний, модифіковані дані:
+                            <div class="alert alert-warning" id='verificationErrorDiff'></div>
+                        </div>
+                        <div class="alert alert-success" id='verificationSuccess' style="display: none"></div>
+
+                        <button id="VerifyDataButton" onclick="euSignTest.verifyData()" disabled="" class="btn btn-info pull-right">Перевірити</button>
+                        <div class="checkbox pull-right"><label><input type="checkbox" id="cbTestError">Імітація помилки</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <output id="SelectedCertsList" style="display: none">Сертифікати відсутні в локальному сховищі</output>
+            <output id="SelectedCRLsList" style="display:none">СВС відсутні в локальному сховищі</output>
+        </div>
+        <script src="./public/js/lib/eu/euscpt.js"></script>
+        <script src="./public/js/lib/eu/euscpm.js"></script>
+        <script src="./public/js/lib/eu/euscp.js"></script>
+        <script src="./public/js/lib/eu/euutils.js"></script>
+        <script src="./public/js/lib/eu/manager.js"></script>
+        <script src="./public/js/documents.js"></script>
+    </div>
+</body>
+</html>

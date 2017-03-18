@@ -1,0 +1,14 @@
+{
+  "name": "docsensus-sign-example",
+  "version": "0.0.1",
+  "description": "docsensus ukraine digital cert signing",
+  "main": "sign.html",
+
+  "scripts": {
+  },
+
+  "author": "nned.me@gmail.com",
+  "license": "ISC",
+  "devDependencies": {
+  }
+}
