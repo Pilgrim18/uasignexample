@@ -3,7 +3,7 @@
 var URL_EMAIL_PARAM = "@EMAIL_PARAM";
 var URL_GET_CERTIFICATES = "/Data/CACertificates.p7b?version=1.0.5";
 var URL_CAS = "/Data/CAs.json?version=1.0.5";
-var URL_XML_HTTP_PROXY_SERVICE = "/proxy";
+var URL_XML_HTTP_PROXY_SERVICE = "/backend/proxy.php";
 
 //=============================================================================
 
@@ -276,14 +276,14 @@ var EUSignCPTest = NewClass({
 
                 settings = euSign.CreateTSPSettings();
                 if (!offline) {
-                    settings.SetGetStamps(true);
-                    if (caServer.tspAddress != "") {
-                        settings.SetAddress(caServer.tspAddress);
-                        settings.SetPort(caServer.tspAddressPort);
-                    } else {
+                    settings.SetGetStamps(false);
+                    // if (caServer.tspAddress != "") {
+                    //     settings.SetAddress(caServer.tspAddress);
+                    //     settings.SetPort(caServer.tspAddressPort);
+                    // } else {
                         settings.SetAddress('acskidd.gov.ua');
                         settings.SetPort('80');
-                    }
+                    // }
                 }
                 euSign.SetTSPSettings(settings);
 
