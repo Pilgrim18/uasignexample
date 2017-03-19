@@ -70,10 +70,12 @@ var EUSignCPTest = NewClass({
 
                     euSignTest.setSelectPKCertificatesEvents();
                     if (utils.IsSessionStorageSupported()) {
-                        var _readPrivateKeyAsStoredFile = function () {
-                            euSignTest.readPrivateKeyAsStoredFile();
-                        }
-                        setTimeout(_readPrivateKeyAsStoredFile, 10);
+
+                        // var _readPrivateKeyAsStoredFile = function () {
+                        //     euSignTest.readPrivateKeyAsStoredFile();
+                        // }
+
+                        // setTimeout(_readPrivateKeyAsStoredFile, 10);
                     }
 
                     setStatus('');
@@ -437,17 +439,24 @@ var EUSignCPTest = NewClass({
             document.getElementById('PKeyPassword').value = '';
         },
 //-----------------------------------------------------------------------------
+        // XXX.   get certificates by loading from servers
         getPrivateKeyCertificatesByCMP: function (key, password, onSuccess, onError) {
             try {
+                // XXX replace this with our server
                 var cmpAddress = euSignTest.getCAServer().cmpAddress + ":80";
                 var keyInfo = euSign.GetKeyInfoBinary(key, password);
 
-                onSuccess(euSign.GetCertificatesByKeyInfo(keyInfo, [cmpAddress]));
+                // XXX: get certificates from chosen server
+                var certificates = euSign.GetCertificatesByKeyInfo(keyInfo, [cmpAddress]);
+                console.log("GET CERTIFICATES", 'getPrivateKeyCertificatesByCMP', certificates);
+                onSuccess(certificates);
             } catch (e) {
                 //throw e;
                 onError(e);
             }
         },
+
+        // XXX get private key Certificates
         getPrivateKeyCertificates: function (key, password, fromCache, onSuccess, onError) {
             var certificates;
             if (euSignTest.CAServer != null &&
@@ -467,6 +476,7 @@ var EUSignCPTest = NewClass({
 
                 onSuccess(certificates);
             } else if (euSignTest.useCMP) {
+                // XXX we use this.
                 euSignTest.getPrivateKeyCertificatesByCMP(
                     key, password, onSuccess, onError);
             } else if (euSignTest.loadPKCertsFromFile) {
@@ -483,6 +493,7 @@ var EUSignCPTest = NewClass({
                     _onSuccess, onError);
             }
         },
+        // XXX: reading private key here key
         readPrivateKey: function (keyName, key, password, certificates, fromCache) {
             var _onError = function (e) {
                 setStatus('');
@@ -501,21 +512,29 @@ var EUSignCPTest = NewClass({
                         _onError(euSign.MakeError(EU_ERROR_CERT_NOT_FOUND));
                         return;
                     }
+                    // XXX: call itself???
                     euSignTest.readPrivateKey(keyName, key, password, certs, fromCache);
                 }
 
+                // XXX get certificates
                 euSignTest.getPrivateKeyCertificates(
                     key, password, fromCache, _onGetCertificates, _onError);
                 return;
             }
 
+
             try {
-                if (Array.isArray(certificates)) {
-                    for (var i = 0; i < certificates.length; i++) {
-                        euSign.SaveCertificate(certificates[i]);
+                _doSaveCerts = true;
+
+                if (_doSaveCerts) {
+                    if (Array.isArray(certificates)) {
+                        for (var i = 0; i < certificates.length; i++) {
+                            euSign.SaveCertificate(certificates[i]);
+                        }
+                    } else {
+                        euSign.SaveCertificates(certificates);
                     }
-                } else {
-                    euSign.SaveCertificates(certificates);
+
                 }
 
                 euSign.ReadPrivateKeyBinary(key, password);
@@ -582,6 +601,10 @@ var EUSignCPTest = NewClass({
 
             return;
         },
+
+        /**
+         * 1.
+         */
         readPrivateKeyButtonClick: function () {
             var passwordTextField = document.getElementById('PKeyPassword');
             var certificatesFiles = euSignTest.privateKeyCerts;
@@ -590,6 +613,7 @@ var EUSignCPTest = NewClass({
                 setKeyStatus(e, 'error');
             };
 
+            // on file read - read private key file : filename, data
             var _onSuccess = function (keyName, key) {
                 euSignTest.readPrivateKey(keyName, new Uint8Array(key),
                     passwordTextField.value, null, false);
@@ -621,10 +645,12 @@ var EUSignCPTest = NewClass({
                         return;
                     }
 
+                    // XXX: reading CERT FILE here
                     if (utils.IsFileImage(files[0])) {
                         euSignTest.readPrivateKeyAsImage(files[0], _onSuccess, _onError);
                     }
                     else {
+                        // XXX: on success file read - go read key
                         var _onFileRead = function (readedFile) {
                             _onSuccess(readedFile.file.name, readedFile.data);
                         };
@@ -706,6 +732,8 @@ var EUSignCPTest = NewClass({
             document.getElementById('InternationalPrivKeyParams').style.display =
                 useRSA ? 'block' : 'none';
         },
+
+
         generatePK: function () {
             var pkPassword = document.getElementById('PGenKeyPassword').value;
 
@@ -773,6 +801,7 @@ var EUSignCPTest = NewClass({
             setTimeout(_generatePKFunction, 10);
         },
 //-----------------------------------------------------------------------------
+        // XXX:
         signData: function () {
             var data = prepareObject(local_data.obj);
             var isInternalSign = true;
@@ -785,6 +814,7 @@ var EUSignCPTest = NewClass({
                     var sign = "";
                     if (dsAlgType == 1) {
                         if (isInternalSign) {
+                            // XXX we use this to sign data.
                             sign = euSign.SignDataInternal(isAddCert, data, true);
                         } else {
                             if (isSignHash) {
@@ -800,6 +830,7 @@ var EUSignCPTest = NewClass({
                     setStatus('');
                     setKeyStatus('Підпису успішно накладено. Триває вставка в ЦБД .... ', 'info');
 
+                    // XXX show signed data.
                     document.getElementById('signInfo').innerHTML = sign;
                     local_data.sign = sign;
                     document.getElementById('VerifyDataButton').disabled = false;
@@ -813,9 +844,11 @@ var EUSignCPTest = NewClass({
             setStatus('підпис данних');
             setTimeout(_signDataFunction, 10);
         },
+        // XXX handler for verify data
         verifyData: function () {
+            // XXX: get signed data from textbox
             var signedData = document.getElementById('signInfo').value;//local_data.sign;
-            console.log(signedData);
+            console.log('verifyData()', 'signedData', signedData);
             document.getElementById('verificationError').style.display = 'none';
             document.getElementById('verificationSuccess').style.display = 'none';
             var isInternalSign = true;
@@ -861,6 +894,7 @@ var EUSignCPTest = NewClass({
                             if (document.getElementById('cbTestError').checked) // для демострации неверной подписи
                                 currData = prepareObject(local_data.obj2);
                             jsondiffpatch.formatters.html.hideUnchanged();
+                            // XXX diff extracted data and local data
                             var delta = jsondiffpatch.diff(JSON.parse(signData), JSON.parse(currData));
                             if(!delta)
                             {
@@ -1846,7 +1880,7 @@ var EUSignCPTest = NewClass({
     });
 
 //=============================================================================
-
+// XXX
 var euSignTest = EUSignCPTest();
 var euSign = EUSignCP();
 var utils = Utils(euSign);
