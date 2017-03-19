@@ -40,7 +40,7 @@
                 <div id="keyStatusPanel" class="panel panel-info">
                     <div class="panel-heading"><span id="ChoosePKFileText"></span></div>
                     <div class="panel-body">
-                        <div id="PKCertsSelectZone" hidden="" class="row">
+ <!--                        <div id="PKCertsSelectZone" hidden="" class="row">
                             <div class="col-sm-2">
                                 <p>Особисті сертифікати:</p>
                             </div>
@@ -53,6 +53,7 @@
                                 <output id="SelectedPKCertsList"></output>
                             </div>
                         </div>
+  -->
                         <div class="row">
                             <div class="col-sm-2">
                                 <p>Особистий ключ:</p>
@@ -73,10 +74,10 @@
                                 <input type="password" id="PKeyPassword" style="width: 180px;" class="form-control form-control-sm" autocomplete="off">
                             </div>
                             <div class="col-sm-6">
-                                <button id="PKeyReadButton" onclick="euSignTest.readPrivateKeyButtonClick()" class="btn btn-default">Зчитати</button>
+                                <button id="PKeyReadButton" onclick="readPrivateKeyButtonClick()" class="btn btn-default">Зчитати</button>
                             </div>
                             <div class="col-sm-2">
-                                <button id="SignDataButton" onclick="euSignTest.signData()" disabled="" class="btn btn-info pull-right">Підписати</button>
+                                <button id="SignDataButton" onclick="signDataClick()" class="btn btn-info pull-right">Підписати</button>
                             </div>
                         </div>
                         <div id="certInfo" style="display: none" class="alert alert-info"></div>
@@ -108,6 +109,94 @@
         <script src="./public/js/lib/eu/euutils.js"></script>
         <script src="./public/js/lib/eu/manager.js"></script>
         <script src="./public/js/documents.js"></script>
+        <script src="/DigitalSignManager.js"></script>
+
     </div>
+
+    <script type="text/javascript">
+        window.DS = new DigitalSign();
+        setTimeout(DS.init.bind(DS), 100);
+
+
+        function initCointrols() {
+            document.getElementById('PKeyFileInput').addEventListener('change', euSignTest.selectPrivateKeyFile, false);
+        };
+
+
+        function  readPrivateKeyButtonClick() {
+
+            var passwordTextField = document.getElementById('PKeyPassword');
+            var password = passwordTextField.value;
+            // var certificatesFiles = euSignTest.privateKeyCerts;
+
+            var _onError = function (e) {
+                setKeyStatus(e, 'error');
+            };
+
+            // on file read - read private key file : filename, data
+            var self = this;
+            var _onSuccess = function (keyName, key) {
+                // euSignTest.readPrivateKey(keyName, new Uint8Array(key), password, null, false);
+
+                DS.loadAndApprovePrivateKey(key, password, DS.CAServer.address,
+                    function(data) {
+                        console.log('==================');
+                        console.log('TOTAL SUCCESS', data);
+                });
+            };
+
+            try {
+                if (document.getElementById('PKeyReadButton').innerText == 'Зчитати') {
+                    setStatus('Зчитування ключа');
+                    setKeyStatus('Зчитування ключа, зачекайте...', 'info');
+                    var files = document.getElementById('PKeyFileInput').files;
+
+                    if (files.length != 1) {
+                        _onError("Виникла помилка при зчитуванні особистого ключа. " +
+                            "Опис помилки: файл з особистим ключем не обрано");
+                        return;
+                    }
+                    if (passwordTextField.value == "") {
+                        passwordTextField.focus();
+                        _onError("Виникла помилка при зчитуванні особистого ключа. " +
+                            "Опис помилки: не вказано пароль доступу до особистого ключа");
+                        return;
+                    }
+
+                    // XXX: reading CERT FILE here
+                    // XXX: on success file read - go read key
+                    var _onFileRead = function (readedFile) {
+                        _onSuccess(readedFile.file.name, readedFile.data);
+                    };
+
+                    DS.signLib.ReadFile(files[0], _onFileRead.bind(this), _onError.bind(this));
+
+                } else {
+                    euSignTest.removeStoredPrivateKey();
+                    euSign.ResetPrivateKey();
+                    euSignTest.privateKeyReaded(false);
+                    passwordTextField.value = "";
+                    euSignTest.clearPrivateKeyCertificatesList();
+                    setKeyStatus('Завантажте ключ', 'info');
+                    document.getElementById('certInfo').style.display = 'none';
+                    // document.getElementById('SignDataButton').disabled = 'disabled';
+                }
+            } catch (e) {
+                _onError(e);
+            }
+        };
+
+
+        signDataClick = function() {
+            var data = "ААА\nБББ\nВВВ\n0123456789";
+            console.log('signDataClick()');
+            var signedData = DS.signData(data);
+            console.log("SIGNED DATA:", signedData);
+
+            document.getElementById('signInfo').innerHTML = signedData;
+        };
+
+    </script>
+
 </body>
 </html>

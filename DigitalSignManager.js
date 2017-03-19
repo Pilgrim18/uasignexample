@@ -1,7 +1,45 @@
 var DigitalSign =  function(options){
     this.options = options;
+    this.signLib = EUSignCP();
+
+    this.CAServer = this.CAList[0];
 };
 
+DigitalSign.prototype.CAList = [
+        {
+        "issuerCNs":                ["АЦСК ПАТ КБ «ПРИВАТБАНК»",
+                                    "АЦСК «ПРИВАТБАНК»"],
+        "address":                  "acsk.privatbank.ua",
+        "ocspAccessPointAddress":   "acsk.privatbank.ua/services/ocsp/",
+        "ocspAccessPointPort":      "80",
+        "cmpAddress":               "acsk.privatbank.ua",
+        "tspAddress":               "acsk.privatbank.ua",
+        "tspAddressPort":           "80"
+    },
+    {
+        "issuerCNs":                ["АЦСК ТОВ \"Центр сертифікації ключів \"Україна\"",
+                                    "ТОВ \"Центр сертифікації ключів \"Україна\""],
+        "address":                  "uakey.com.ua",
+        "ocspAccessPointAddress":   "uakey.com.ua",
+        "ocspAccessPointPort":      "80",
+        "cmpAddress":               "uakey.com.ua",
+        "tspAddress":               "uakey.com.ua",
+        "tspAddressPort":           "80"
+    },
+
+];
+
+DigitalSign.prototype.init = function() {
+    try {
+        this.signLib.Initialize();
+        this.signLib.SetJavaStringCompliant(true);
+        this.signLib.SetCharset("UTF-16LE");
+
+        this.initialized = true;
+    } catch (e) {
+        console.error(e);
+    }
+};
 
 /**
  * Applies password to user key, and decodes it.
@@ -13,7 +51,7 @@ var DigitalSign =  function(options){
  */
 DigitalSign.prototype.decodePrivateKeyByPassword = function(key, password) {
     console.log('decodePrivateKeyByPassword', key, password);
-    return  euSign.GetKeyInfoBinary(key, password);
+    return  this.signLib.GetKeyInfoBinary(key, password);
 };
 
 
@@ -27,14 +65,14 @@ DigitalSign.prototype.decodePrivateKeyByPassword = function(key, password) {
  * @param  {[type]} onFail           [description]
  * @return {UInt8Array}
  */
-DigitalSign.prototype.loadCertificatesByPrivateKey = function(cmpServerAddress, decodedKey, onSuccess, onFail) {
-    console.log('loadCertificatesByPrivateKey', cmpServerAddress, decodedKey, onSuccess, onFail);
+DigitalSign.prototype.loadCertificatesByPrivateKey = function( decodedKey, cmpServerAddress,onSuccess, onFail) {
+    console.log('loadCertificatesByPrivateKey', decodedKey, cmpServerAddress, onSuccess, onFail);
     try {
-        var certificates = euSign.GetCertificatesByKeyInfo(decodedKey, [cmpServerAddress]);
+        var certificates = this.signLib.GetCertificatesByKeyInfo(decodedKey, [cmpServerAddress]);
         console.log("GET CERTIFICATES", 'loadCertificatesByPrivateKey', certificates);
 
         // save certs
-        euSign.SaveCertificates(certificates)
+        this.signLib.SaveCertificates(certificates);
 
         onSuccess(certificates);
     } catch (e) {
@@ -46,7 +84,7 @@ DigitalSign.prototype.loadCertificatesByPrivateKey = function(cmpServerAddress, 
 DigitalSign.prototype.loadPrivateKeyOwnerInfo = function(key, password) {
     console.log('getKeyOwnerInfo', key, password);
 
-    var ownerInfo = euSign.ReadPrivateKeyBinary(key, password);
+    var ownerInfo = this.signLib.ReadPrivateKeyBinary(key, password);
     console.log('getKeyOwnerInfo:', ownerInfo);
     return ownerInfo;
 };
@@ -63,7 +101,7 @@ DigitalSign.prototype.loadPrivateKeyOwnerInfo = function(key, password) {
 DigitalSign.prototype.getPrivateKeyOwnerInfo = function(key, password) {
     console.log('getPrivateKeyOwnerInfo', key, password);
 
-    var ownerInfo = euSign.ReadPrivateKeyBinary(key, password);
+    var ownerInfo = this.signLib.ReadPrivateKeyBinary(key, password);
     console.log('getPrivateKeyOwnerInfo:', ownerInfo);
     return ownerInfo;
 };
@@ -81,12 +119,12 @@ DigitalSign.prototype.loadAndApprovePrivateKey = function(key, password, cmpServ
     console.log('loadAndApprovePrivateKey', key, password, cmpServerAddress);
 
     // get decoded Key
-    var decodedPKey = this.decodePrivateKeyByPassword(key, passw);
+    var decodedPKey = this.decodePrivateKeyByPassword(key, password);
 
     // certificate section - load and save certificates here
     var _onCertificatesLoaded = function(certificatesUInt8Array) {
         // on certificates loaded - get private user info
-        var privateKeyOwnerInfo = this.loadPrivateKeyOwnerInfo(key, passw);
+        var privateKeyOwnerInfo = this.loadPrivateKeyOwnerInfo(key, password);
         onTotalSuccess(privateKeyOwnerInfo);
     };
 
@@ -94,25 +132,25 @@ DigitalSign.prototype.loadAndApprovePrivateKey = function(key, password, cmpServ
         console.err(err);
     };
     // load and save certificates
-    this.loadCertificatesByPrivateKey(decodedKey, cmpServerAddress, _onCertificatesLoaded, _onFail;
+    this.loadCertificatesByPrivateKey(decodedPKey, cmpServerAddress, _onCertificatesLoaded.bind(this), _onFail.bind(this));
 
-    var ownerInfo = euSign.ReadPrivateKeyBinary(key, password);
+    var ownerInfo = this.signLib.ReadPrivateKeyBinary(key, password);
     console.log('getPrivateKeyOwnerInfo:', ownerInfo);
     return ownerInfo;
 };
 
 
 
-DigitalSign.prototype.signDataWithKey  = function(data, decodedkey) {
+DigitalSign.prototype.signData  = function(data) {
     var signedData;
     var dsAlgType = 1;// ДСТУ -1, RSA -2
     switch(dsAlgType) {
         default:
         case 1 :
-            signedData = euSign.SignDataInternal(true /*isAppendCert*/ , data, true /*asBase64String*/);
+            signedData = this.signLib.SignDataInternal(true /*isAppendCert*/ , data, true /*asBase64String*/);
         break;
         case 2 :
-            signedData = euSign.SignDataRSA(data, true /*isAppendCert*/, false /*externalSgn*/ , true /*asBase64String*/);
+            signedData = this.signLib.SignDataRSA(data, true /*isAppendCert*/, false /*externalSgn*/ , true /*asBase64String*/);
         break;
     }
 
@@ -122,10 +160,10 @@ DigitalSign.prototype.signDataWithKey  = function(data, decodedkey) {
 
 
 DigitalSign.prototype.extractSignedDocument  = function(signedDocument) {
-    var info = euSign.VerifyDataInternal(signedData);
+    var info = this.signLib.VerifyDataInternal(signedDocument);
 
     return {owner : info.GetOwnerInfo(),
             signtime: info.GetTimeInfo(),
-            data : euSign.ArrayToString(info.GetData())
+            data : this.signLib.ArrayToString(info.GetData())
             };
 };
