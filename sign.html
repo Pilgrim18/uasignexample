@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -29,14 +29,6 @@
         <div id="infoPanel" class="panel panel-default">
             <div class="panel-heading">Накладення підпису<span id="status"></span></div>
             <div class="panel-body">
-                <div class="row">
-                    <div class="col-sm-2">
-                        <p>Оберіть ЦСК:</p>
-                    </div>
-                    <div class="col-sm-10">
-                        <select id="CAsServersSelect"></select>
-                    </div>
-                </div>
                 <div id="keyStatusPanel" class="panel panel-info">
                     <div class="panel-heading"><span id="ChoosePKFileText"></span></div>
                     <div class="panel-body">
@@ -79,11 +71,20 @@
                             <div class="col-sm-2">
                                 <button id="SignDataButton" onclick="signDataClick()" class="btn btn-info pull-right">Підписати</button>
                             </div>
+                            <div class="col-sm-2">
+                                <button id="ExtractDataButton" onclick="extractDataClick()" class="btn btn-alert pull-right">EXTRACT</button>
+                            </div>
+
+
                         </div>
                         <div id="certInfo" style="display: none" class="alert alert-info"></div>
                         <div class="alert alert-primary">
                             <textarea rows="7" id="signInfo" style="width: 100%"></textarea>
                         </div>
+                        <div class="alert alert-primary">
+                            <textarea rows="7" id="extractedInfo" style="width: 100%"></textarea>
+                        </div>
+
                     </div>
                 </div>
                 <div class="panel panel-default">
@@ -107,8 +108,8 @@
         <script src="./public/js/lib/eu/euscpm.js"></script>
         <script src="./public/js/lib/eu/euscp.js"></script>
         <script src="./public/js/lib/eu/euutils.js"></script>
-        <script src="./public/js/lib/eu/manager.js"></script>
-        <script src="./public/js/documents.js"></script>
+        <!-- <script src="./public/js/lib/eu/manager.js"></script> -->
+        <!-- <script src="./public/js/documents.js"></script> -->
         <script src="/DigitalSignManager.js"></script>
 
     </div>
@@ -117,6 +118,10 @@
         window.DS = new DigitalSign();
         setTimeout(DS.init.bind(DS), 100);
 
+
+        setStatus = function (info) {
+            console.log(info);
+        };
 
         function initCointrols() {
             document.getElementById('PKeyFileInput').addEventListener('change', euSignTest.selectPrivateKeyFile, false);
@@ -194,6 +199,16 @@
             console.log("SIGNED DATA:", signedData);
 
             document.getElementById('signInfo').innerHTML = signedData;
+        };
+
+
+        extractDataClick = function() {
+            console.log('extractDataClick()');
+            var signedData = document.getElementById('signInfo').innerHTML;
+
+            var data = DS.extractSignedDocument(signedData);
+
+            document.getElementById('extractedInfo').innerHTML = JSON.stringify(data.data);
         };
 
     </script>
